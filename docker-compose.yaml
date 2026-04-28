@@ -1,0 +1,63 @@
+
+services:
+  # ДОМЕН 1: Пользователи и Самокаты
+  identity_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: identity_fleet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: p@ssw0rd
+    ports:
+      - "5431:5432"
+
+  # ДОМЕН 2: Шард 1 (Поездки и Логи)
+  ops_shard_1:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: operations_sh1
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: p@ssw0rd
+    ports:
+      - "5434:5432"
+
+  # ДОМЕН 2: Шард 2 (Поездки и Логи)
+  ops_shard_2:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: operations_sh2
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: p@ssw0rd
+    ports:
+      - "5433:5432"
+
+  # МОНИТОРИНГ: Сбор метрик из баз
+  postgres_exporter_id:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:password@identity_db:5432/identity_fleet?sslmode=disable"
+    ports:
+      - "9187:9187"
+
+  postgres_exporter_ops1:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:password@ops_shard_1:5432/operations_sh1?sslmode=disable"
+    ports:
+      - "9188:9187"
+
+  # МОНИТОРИНГ: Prometheus (Main)
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: always
+
+  # МОНИТОРИНГ: Grafana
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
