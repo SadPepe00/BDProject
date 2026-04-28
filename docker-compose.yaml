@@ -1,4 +1,3 @@
-
 services:
   # ДОМЕН 1: Пользователи и Самокаты
   identity_db:
@@ -30,22 +29,31 @@ services:
     ports:
       - "5433:5432"
 
-  # МОНИТОРИНГ: Сбор метрик из баз
+  # Экспортер для Identity
   postgres_exporter_id:
     image: prometheuscommunity/postgres-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://admin:password@identity_db:5432/identity_fleet?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://postgres:p@ssw0rd@identity_db:5432/identity_fleet?sslmode=disable"
     ports:
       - "9187:9187"
 
+  # Экспортер для Shard 1
   postgres_exporter_ops1:
     image: prometheuscommunity/postgres-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://admin:password@ops_shard_1:5432/operations_sh1?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://postgres:p@ssw0rd@ops_shard_1:5432/operations_sh1?sslmode=disable"
     ports:
       - "9188:9187"
 
-  # МОНИТОРИНГ: Prometheus (Main)
+  # Экспортер для Shard 2
+  postgres_exporter_ops2:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:p@ssw0rd@ops_shard_2:5432/operations_sh2?sslmode=disable"
+    ports:
+      - "9189:9187"
+
+  # МОНИТОРИНГ
   prometheus:
     image: prom/prometheus
     volumes:
@@ -54,9 +62,10 @@ services:
       - "9090:9090"
     restart: always
 
-  # МОНИТОРИНГ: Grafana
   grafana:
     image: grafana/grafana
+    volumes:
+      - ./grafana_data:/var/lib/grafana
     ports:
       - "3000:3000"
     environment:
