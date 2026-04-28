@@ -1,0 +1,31 @@
+groups:
+  - name: database_alerts
+    rules:
+      # 1. Если база упала (контейнер выключился)
+      - alert: DatabaseDown
+        expr: pg_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "База данных {{ $labels.instance }} упала!"
+          description: "Экспортер не может достучаться до БД больше 30 секунд."
+
+      # 2. Если слишком много подключений
+      - alert: TooManyConnections
+        expr: pg_stat_database_numbackends > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Много подключений к {{ $labels.datname }}"
+          description: "В базе {{ $labels.datname }} больше 10 активных сессий."
+          # 3. Если сам экспортер пропал
+      - alert: ExporterDown
+        expr: up{job="postgres_metrics"} == 0
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Экспортер {{ $labels.instance }} недоступен!"
+          description: "Prometheus не может собрать метрики. Возможно, контейнер упал."

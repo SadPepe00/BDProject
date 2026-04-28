@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s      # Сколько ждать перед первой отправкой
+  group_interval: 25s  # Интервал между повторными уведомлениями
+  repeat_interval: 1h  # Как часто повторять один и тот же алерт
+  receiver: 'telegram'
+
+receivers:
+- name: 'telegram'
+  telegram_configs:
+  - bot_token: '8272765867:AAFalcduIyeub5UDgAwRYfkUiWHuLufLapU'
+    chat_id: 832047228
+    parse_mode: 'HTML'
+    message: |
+      <b>[{{ .Status | toUpper }}] {{ .CommonAnnotations.summary }}</b>
+      <i>Описание:</i> {{ .CommonAnnotations.description }}
+      <i>Сервис:</i> {{ .CommonLabels.instance }}
